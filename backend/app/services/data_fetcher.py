@@ -4,7 +4,10 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import json
 import os
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class DataFetcher:
@@ -22,7 +25,8 @@ class DataFetcher:
             try:
                 df = pd.read_json(cache_file)
                 return df
-            except:
+            except (json.JSONDecodeError, ValueError, pd.errors.EmptyDataError) as e:
+                logger.warning(f"Failed to load cache for {indicator_code}: {e}")
                 return None
         return None
 
@@ -49,7 +53,8 @@ class DataFetcher:
                 month = int(date_str[5:7])
                 return datetime(year, month, 1)
             return None
-        except:
+        except (ValueError, TypeError) as e:
+            logger.debug(f"Failed to parse date '{date_str}': {e}")
             return None
 
     def fetch_gdp_data(self) -> pd.DataFrame:
@@ -68,12 +73,12 @@ class DataFetcher:
                 return pd.DataFrame()
             
             result = result.dropna()
-            max_date = datetime(2025, 12, 31)
+            max_date = datetime.now()
             result = result[result["date"] <= max_date]
             result = result.sort_values("date", ascending=False)
             return result
         except Exception as e:
-            print(f"获取GDP数据失败: {e}")
+            logger.error(f"获取GDP数据失败: {e}")
             return pd.DataFrame()
 
     def fetch_cpi_data(self) -> pd.DataFrame:
@@ -92,12 +97,12 @@ class DataFetcher:
                 return pd.DataFrame()
             
             result = result.dropna()
-            max_date = datetime(2025, 11, 30)
+            max_date = datetime.now()
             result = result[result["date"] <= max_date]
             result = result.sort_values("date", ascending=False)
             return result
         except Exception as e:
-            print(f"获取CPI数据失败: {e}")
+            logger.error(f"获取CPI数据失败: {e}")
             return pd.DataFrame()
 
     def fetch_pmi_data(self) -> pd.DataFrame:
@@ -116,12 +121,12 @@ class DataFetcher:
                 return pd.DataFrame()
             
             result = result.dropna()
-            max_date = datetime(2025, 12, 31)
+            max_date = datetime.now()
             result = result[result["date"] <= max_date]
             result = result.sort_values("date", ascending=False)
             return result
         except Exception as e:
-            print(f"获取PMI数据失败: {e}")
+            logger.error(f"获取PMI数据失败: {e}")
             return pd.DataFrame()
 
     def fetch_ppi_data(self) -> pd.DataFrame:
@@ -135,12 +140,12 @@ class DataFetcher:
             result["value"] = pd.to_numeric(df["当月同比增长"], errors="coerce")
             
             result = result.dropna()
-            max_date = datetime(2025, 12, 31)
+            max_date = datetime.now()
             result = result[result["date"] <= max_date]
             result = result.sort_values("date", ascending=False)
             return result
         except Exception as e:
-            print(f"获取PPI数据失败: {e}")
+            logger.error(f"获取PPI数据失败: {e}")
             return pd.DataFrame()
 
     def fetch_m2_data(self) -> pd.DataFrame:
@@ -164,7 +169,7 @@ class DataFetcher:
             
             return result.dropna()
         except Exception as e:
-            print(f"获取M2数据失败: {e}")
+            logger.error(f"获取M2数据失败: {e}")
             return pd.DataFrame()
 
     def fetch_rate_data(self) -> pd.DataFrame:
@@ -181,7 +186,7 @@ class DataFetcher:
             result = result.sort_values("date", ascending=False)
             return result
         except Exception as e:
-            print(f"获取利率数据失败: {e}")
+            logger.error(f"获取利率数据失败: {e}")
             return pd.DataFrame()
 
     def fetch_exchange_data(self) -> pd.DataFrame:
@@ -202,7 +207,7 @@ class DataFetcher:
             result["value"] = pd.to_numeric(usd_cny.iloc[0]["rate"], errors="coerce")
             return result
         except Exception as e:
-            print(f"获取汇率数据失败: {e}")
+            logger.error(f"获取汇率数据失败: {e}")
             return pd.DataFrame()
 
     def fetch_indicator_data(self, indicator_code: str, force_update: bool = False) -> pd.DataFrame:

@@ -1,7 +1,17 @@
 <template>
   <div class="dashboard">
-    <el-row :gutter="24" class="summary-cards">
-      <el-col :span="8" v-for="item in summary" :key="item.code">
+    <div v-if="loading" class="skeleton-container">
+      <el-row :gutter="24">
+        <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="i in 5" :key="i">
+          <el-card class="skeleton-card">
+            <el-skeleton :rows="3" animated />
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
+    
+    <el-row :gutter="24" class="summary-cards" v-else>
+      <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="item in summary" :key="item.code">
         <el-card class="summary-card" shadow="hover">
           <div class="card-header">
             <span class="card-title">{{ item.name }}</span>
@@ -20,16 +30,11 @@
         </el-card>
       </el-col>
     </el-row>
-
-    <div v-if="loading" class="loading-container">
-      <el-icon class="is-loading"><Loading /></el-icon>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { Loading } from '@element-plus/icons-vue';
 import { useIndicatorStore } from '../stores';
 import { storeToRefs } from 'pinia';
 
@@ -73,6 +78,14 @@ const getChangeClass = (change?: number) => {
   padding: 0;
 }
 
+.skeleton-container {
+  margin-bottom: 24px;
+}
+
+.skeleton-card {
+  margin-bottom: 24px;
+}
+
 .summary-cards {
   margin-left: 0 !important;
   margin-right: 0 !important;
@@ -80,14 +93,17 @@ const getChangeClass = (change?: number) => {
 
 .summary-card {
   transition: all 0.3s;
+  margin-bottom: 24px;
+  height: 100%;
 }
 
 .summary-card:hover {
   transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .summary-card :deep(.el-card__body) {
-  padding: 24px;
+  padding: 20px;
 }
 
 .card-header {
@@ -109,7 +125,7 @@ const getChangeClass = (change?: number) => {
 }
 
 .value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 600;
   color: #303133;
 }
@@ -139,14 +155,13 @@ const getChangeClass = (change?: number) => {
   color: #909399;
 }
 
-.chart-card :deep(.el-card__header) {
-  padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.chart-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
+@media (max-width: 768px) {
+  .value {
+    font-size: 24px;
+  }
+  
+  .summary-card :deep(.el-card__body) {
+    padding: 16px;
+  }
 }
 </style>
