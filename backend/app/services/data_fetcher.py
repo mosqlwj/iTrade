@@ -174,13 +174,13 @@ class DataFetcher:
 
     def fetch_rate_data(self) -> pd.DataFrame:
         try:
-            df = ak.macro_bank_china_interest_rate()
+            df = ak.macro_china_lpr()
             if df.empty:
                 return pd.DataFrame()
             
             result = pd.DataFrame()
-            result["date"] = pd.to_datetime(df["日期"], errors="coerce")
-            result["value"] = pd.to_numeric(df["今值"], errors="coerce")
+            result["date"] = pd.to_datetime(df["TRADE_DATE"], errors="coerce")
+            result["value"] = pd.to_numeric(df["LPR1Y"], errors="coerce")
             
             result = result.dropna()
             result = result.sort_values("date", ascending=False)
@@ -279,11 +279,11 @@ class DataFetcher:
             },
             {
                 "code": "rate",
-                "name": "央行利率",
+                "name": "LPR利率(1年期)",
                 "category": "货币金融",
                 "unit": "%",
-                "description": "中国央行基准利率",
-                "update_frequency": "不定期",
+                "description": "贷款市场报价利率(LPR)1年期",
+                "update_frequency": "月度",
             },
             {
                 "code": "exchange",
