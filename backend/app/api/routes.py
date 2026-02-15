@@ -168,14 +168,21 @@ def get_dashboard_summary():
     indicators = ["gdp", "cpi", "pmi"]
     summary = []
     for code in indicators:
+        df = data_fetcher.fetch_indicator_data(code)
         trend = indicator_calculator.get_indicator_trend(code)
         indicator_info = next((i for i in data_fetcher.get_available_indicators() if i["code"] == code), None)
+        
+        latest_date = None
+        if not df.empty and "date" in df.columns:
+            latest_date = df["date"].iloc[0].strftime("%Y-%m-%d") if hasattr(df["date"].iloc[0], 'strftime') else str(df["date"].iloc[0])[:10]
+        
         summary.append({
             "code": code,
             "name": indicator_info["name"] if indicator_info else code,
             "value": trend.get("latest_value"),
             "change": trend.get("change_percent"),
             "trend": trend.get("trend"),
-            "unit": indicator_info["unit"] if indicator_info else None
+            "unit": indicator_info["unit"] if indicator_info else None,
+            "latest_date": latest_date
         })
     return summary
