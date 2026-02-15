@@ -124,6 +124,25 @@ class DataFetcher:
             print(f"获取PMI数据失败: {e}")
             return pd.DataFrame()
 
+    def fetch_ppi_data(self) -> pd.DataFrame:
+        try:
+            df = ak.macro_china_ppi()
+            if df.empty or '月份' not in df.columns:
+                return pd.DataFrame()
+            
+            result = pd.DataFrame()
+            result["date"] = df["月份"].apply(self.parse_chinese_date)
+            result["value"] = pd.to_numeric(df["当月同比增长"], errors="coerce")
+            
+            result = result.dropna()
+            max_date = datetime(2025, 12, 31)
+            result = result[result["date"] <= max_date]
+            result = result.sort_values("date", ascending=False)
+            return result
+        except Exception as e:
+            print(f"获取PPI数据失败: {e}")
+            return pd.DataFrame()
+
     def fetch_m2_data(self) -> pd.DataFrame:
         try:
             df = ak.macro_china_m2_year()
@@ -148,6 +167,44 @@ class DataFetcher:
             print(f"获取M2数据失败: {e}")
             return pd.DataFrame()
 
+    def fetch_rate_data(self) -> pd.DataFrame:
+        try:
+            df = ak.macro_bank_china_interest_rate()
+            if df.empty:
+                return pd.DataFrame()
+            
+            result = pd.DataFrame()
+            result["date"] = pd.to_datetime(df["日期"], errors="coerce")
+            result["value"] = pd.to_numeric(df["今值"], errors="coerce")
+            
+            result = result.dropna()
+            result = result.sort_values("date", ascending=False)
+            return result
+        except Exception as e:
+            print(f"获取利率数据失败: {e}")
+            return pd.DataFrame()
+
+    def fetch_exchange_data(self) -> pd.DataFrame:
+        try:
+            df = ak.currency_latest()
+            if df.empty:
+                return pd.DataFrame()
+            
+            usd_cny = df[df['currency'].str.contains('人民币|CNY', case=False, na=False)]
+            if usd_cny.empty:
+                usd_cny = df[df['currency'].str.contains('美元|USD', case=False, na=False)]
+            
+            if usd_cny.empty:
+                return pd.DataFrame()
+            
+            result = pd.DataFrame()
+            result["date"] = pd.Timestamp.now()
+            result["value"] = pd.to_numeric(usd_cny.iloc[0]["rate"], errors="coerce")
+            return result
+        except Exception as e:
+            print(f"获取汇率数据失败: {e}")
+            return pd.DataFrame()
+
     def fetch_indicator_data(self, indicator_code: str, force_update: bool = False) -> pd.DataFrame:
         if not force_update:
             cached = self._load_from_cache(indicator_code)
@@ -158,7 +215,10 @@ class DataFetcher:
             "gdp": self.fetch_gdp_data,
             "cpi": self.fetch_cpi_data,
             "pmi": self.fetch_pmi_data,
+            "ppi": self.fetch_ppi_data,
             "m2": self.fetch_m2_data,
+            "rate": self.fetch_rate_data,
+            "exchange": self.fetch_exchange_data,
         }
 
         fetch_fn = fetch_methods.get(indicator_code)
@@ -197,12 +257,36 @@ class DataFetcher:
                 "update_frequency": "月度",
             },
             {
+                "code": "ppi",
+                "name": "工业生产者出厂价格指数(PPI)",
+                "category": "物价水平",
+                "unit": "%",
+                "description": "同比PPI涨跌幅",
+                "update_frequency": "月度",
+            },
+            {
                 "code": "m2",
                 "name": "广义货币(M2)",
                 "category": "货币金融",
                 "unit": "万亿元",
                 "description": "M2货币供应量",
                 "update_frequency": "月度",
+            },
+            {
+                "code": "rate",
+                "name": "央行利率",
+                "category": "货币金融",
+                "unit": "%",
+                "description": "中国央行基准利率",
+                "update_frequency": "不定期",
+            },
+            {
+                "code": "exchange",
+                "name": "人民币汇率",
+                "category": "国际收支",
+                "unit": "",
+                "description": "美元兑人民币汇率",
+                "update_frequency": "日度",
             },
         ]
 
