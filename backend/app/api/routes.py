@@ -165,7 +165,7 @@ def delete_alert(alert_id: int, db: Session = Depends(get_db), current_user: Use
 
 @router.get("/dashboard/summary")
 def get_dashboard_summary():
-    indicators = ["gdp", "cpi", "pmi", "ppi", "rate"]
+    indicators = ["gdp", "cpi", "pmi", "ppi", "rate", "erp"]
     summary = []
     for code in indicators:
         df = data_fetcher.fetch_indicator_data(code)

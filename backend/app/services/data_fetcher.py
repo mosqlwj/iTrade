@@ -210,6 +210,37 @@ class DataFetcher:
             logger.error(f"获取汇率数据失败: {e}")
             return pd.DataFrame()
 
+    def fetch_erp_data(self) -> pd.DataFrame:
+        try:
+            pe_df = ak.stock_a_ttm_lyr()
+            bond_df = ak.bond_zh_us_rate()
+            
+            if pe_df.empty or bond_df.empty:
+                return pd.DataFrame()
+            
+            pe_df["date"] = pd.to_datetime(pe_df["date"])
+            bond_df["date"] = pd.to_datetime(bond_df["日期"])
+            bond_df["bond_10y"] = pd.to_numeric(bond_df["中国国债收益率10年"], errors="coerce")
+            
+            pe_df = pe_df[["date", "middlePETTM"]].copy()
+            pe_df["middlePETTM"] = pd.to_numeric(pe_df["middlePETTM"], errors="coerce")
+            
+            merged = pd.merge_asof(
+                pe_df.sort_values("date"),
+                bond_df[["date", "bond_10y"]].sort_values("date"),
+                on="date",
+                direction="nearest"
+            )
+            
+            merged["value"] = (1 / merged["middlePETTM"] * 100) - merged["bond_10y"]
+            
+            result = merged[["date", "value"]].dropna()
+            result = result.sort_values("date", ascending=False)
+            return result
+        except Exception as e:
+            logger.error(f"获取ERP数据失败: {e}")
+            return pd.DataFrame()
+
     def fetch_indicator_data(self, indicator_code: str, force_update: bool = False) -> pd.DataFrame:
         if not force_update:
             cached = self._load_from_cache(indicator_code)
@@ -224,6 +255,7 @@ class DataFetcher:
             "m2": self.fetch_m2_data,
             "rate": self.fetch_rate_data,
             "exchange": self.fetch_exchange_data,
+            "erp": self.fetch_erp_data,
         }
 
         fetch_fn = fetch_methods.get(indicator_code)
@@ -291,6 +323,14 @@ class DataFetcher:
                 "category": "国际收支",
                 "unit": "",
                 "description": "美元兑人民币汇率",
+                "update_frequency": "日度",
+            },
+            {
+                "code": "erp",
+                "name": "股权风险溢价(ERP)",
+                "category": "市场估值",
+                "unit": "%",
+                "description": "A股ERP = 1/PE(TTM) - 10年期国债收益率",
                 "update_frequency": "日度",
             },
         ]
