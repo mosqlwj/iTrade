@@ -24,7 +24,7 @@
             <span>经济指标</span>
           </el-menu-item>
           <el-menu-item index="/analysis">
-            <el-icon><Analysis /></el-icon>
+            <el-icon><DataAnalysis /></el-icon>
             <span>多维分析</span>
           </el-menu-item>
           <el-menu-item index="/alerts">
@@ -72,6 +72,18 @@ import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from './stores';
 import { storeToRefs } from 'pinia';
+import { 
+  HomeFilled, 
+  TrendCharts, 
+  DataAnalysis, 
+  Bell, 
+  Coin, 
+  User, 
+  Setting,
+  SwitchButton,
+  Loading,
+  DataBoard
+} from '@element-plus/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
